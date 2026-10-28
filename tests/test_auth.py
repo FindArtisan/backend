@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import pytest
 
 from api.core.security import create_access_token
@@ -18,11 +20,13 @@ async def test_register_creates_user(client) -> None:
 
     assert response.status_code == 201
     body = response.json()
-    assert body["email"] == "musah@example.com"
-    assert body["full_name"] == REGISTER_PAYLOAD["full_name"]
-    assert body["role"] == "artisan"
-    assert body["is_active"] is True
-    assert "password" not in body and "password_hash" not in body
+    assert body["status"] == "success"
+    assert body["data"]["email"] == "musah@example.com"
+    assert body["data"]["full_name"] == REGISTER_PAYLOAD["full_name"]
+    assert body["data"]["role"] == "artisan"
+    assert body["data"]["is_active"] is True
+    assert "password" not in body["data"] and "password_hash" not in body["data"]
+    assert set(body.keys()) == {"status", "data"}
 
 
 async def test_register_rejects_duplicate_email(client) -> None:
@@ -32,7 +36,9 @@ async def test_register_rejects_duplicate_email(client) -> None:
     response = await client.post("/auth/register", json=duplicate)
 
     assert response.status_code == 409
-    assert "already registered" in response.json()["detail"]
+    body = response.json()
+    assert body["status"] == "error"
+    assert "already registered" in body["message"]
 
 
 async def test_register_rejects_duplicate_phone(client) -> None:
@@ -42,7 +48,7 @@ async def test_register_rejects_duplicate_phone(client) -> None:
     response = await client.post("/auth/register", json=duplicate)
 
     assert response.status_code == 409
-    assert "already registered" in response.json()["detail"]
+    assert "already registered" in response.json()["message"]
 
 
 async def test_register_rejects_short_password(client) -> None:
@@ -51,6 +57,11 @@ async def test_register_rejects_short_password(client) -> None:
     response = await client.post("/auth/register", json=weak)
 
     assert response.status_code == 422
+    body = response.json()
+    assert body["status"] == "error"
+    assert body["message"] == "Validation failed."
+    assert len(body["errors"]) == 1
+    assert "input" not in body["errors"][0]  # never echo submitted fields
 
 
 async def test_login_returns_token(client) -> None:
@@ -63,9 +74,10 @@ async def test_login_returns_token(client) -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert body["token_type"] == "bearer"
-    assert body["expires_in"] > 0
-    assert isinstance(body["access_token"], str) and body["access_token"]
+    assert body["status"] == "success"
+    assert body["data"]["token_type"] == "bearer"
+    assert body["data"]["expires_in"] > 0
+    assert isinstance(body["data"]["access_token"], str) and body["data"]["access_token"]
 
 
 async def test_login_rejects_wrong_password(client) -> None:
@@ -77,6 +89,7 @@ async def test_login_rejects_wrong_password(client) -> None:
 
     assert response.status_code == 401
     assert response.headers["www-authenticate"] == "Bearer"
+    assert response.json()["message"] == "Incorrect email or password."
 
 
 async def test_login_rejects_unknown_email(client) -> None:
@@ -94,12 +107,12 @@ async def test_me_returns_current_user(client) -> None:
             "/auth/login",
             json={"email": "musah@example.com", "password": "s3crete-pass"},
         )
-    ).json()["access_token"]
+    ).json()["data"]["access_token"]
 
     response = await client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
-    assert response.json()["email"] == "musah@example.com"
+    assert response.json()["data"]["email"] == "musah@example.com"
 
 
 async def test_me_requires_token(client) -> None:
@@ -107,6 +120,7 @@ async def test_me_requires_token(client) -> None:
 
     assert response.status_code == 401
     assert response.headers["www-authenticate"] == "Bearer"
+    assert response.json()["message"] == "Not authenticated."
 
 
 async def test_me_rejects_invalid_token(client) -> None:
@@ -117,8 +131,6 @@ async def test_me_rejects_invalid_token(client) -> None:
 
 async def test_me_rejects_token_of_deleted_user(client) -> None:
     """A validly-signed token for a user id that does not exist must be rejected."""
-    from uuid import UUID
-
     phantom_token = create_access_token(UUID("00000000-0000-0000-0000-000000000009"))
 
     response = await client.get("/auth/me", headers={"Authorization": f"Bearer {phantom_token}"})

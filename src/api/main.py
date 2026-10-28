@@ -2,6 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from api.core.config import settings
+from api.core.errors import register_error_handlers
 from api.routers import auth, health
 
 
@@ -15,6 +16,7 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         openapi_url="/openapi.json",
     )
+    register_error_handlers(app)
 
     app.include_router(health.router)
     app.include_router(auth.router)
