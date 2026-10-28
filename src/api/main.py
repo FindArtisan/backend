@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from api.core.config import settings
-from api.routers import health
+from api.routers import auth, health
 
 
 def create_app() -> FastAPI:
@@ -17,6 +17,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health.router)
+    app.include_router(auth.router)
 
     return app
 

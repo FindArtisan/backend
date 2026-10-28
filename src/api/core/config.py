@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     # URL in production, e.g. postgresql+asyncpg://user:pass@host:5432/findartisan
     DATABASE_URL: str = "sqlite+aiosqlite:///./findartisan.db"
 
+    # Auth / JWT
+    SECRET_KEY: str = "dev-secret-change-me-in-production"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
 
 @lru_cache
 def get_settings() -> Settings:
