@@ -16,13 +16,18 @@ src/api/
 ├── main.py                # FastAPI app factory (create_app) + ASGI app + entry point
 ├── core/
 │   ├── config.py         # Settings via pydantic-settings (loaded from .env)
-│   └── db.py             # Async engine, session factory, get_db dependency
+│   ├── db.py             # Async engine, session factory, get_db dependency
+│   └── security.py       # Password hashing (bcrypt) + JWT helpers
+├── dependencies.py        # get_current_user (JWT bearer guard)
 ├── models/
 │   ├── base.py           # Declarative Base (naming convention) + TimestampMixin
 │   ├── user.py           # User model (single accounts table, Role enum)
 │   └── artisan_profile.py# ArtisanProfile model (1:1 with users via user_id FK)
-└── routers/
-    └── health.py          # /health endpoint
+├── routers/
+│   ├── auth.py           # /auth/register, /auth/login, /auth/me
+│   └── health.py          # /health endpoint
+└── schemas/
+    └── user.py           # Pydantic request/response models per domain
 migrations/                # Alembic (async template), env.py reads DATABASE_URL from Settings
 tests/
 └── test_health.py
@@ -62,6 +67,9 @@ uv run ruff format .                     # format
 - Every domain router should use `tags=[...]` and typed responses (`response_model` or annotated return type).
 - Every new endpoint needs a pytest test in `tests/` using `TestClient` from `api.main` (app factory), not hardcoded servers.
 - App-level strings (project name, description, version) come from `Settings` — don't hardcode them in routers.
+- Request/response schemas live in `src/api/schemas/` (pydantic), service/business
+  logic in `src/api/services/`; route handlers stay thin (validate → call service → return).
+- Endpoints requiring auth inject `get_current_user` from `api/dependencies.py`.
 - Always upgrade away from deprecated packages/warnings — see "Dependency & deprecation policy" below.
 
 ## Definition of done

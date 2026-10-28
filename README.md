@@ -26,6 +26,12 @@ The API is now available at:
 - ReDoc: <http://localhost:8000/redoc>
 - Health check: <http://localhost:8000/health>
 
+Auth endpoints:
+
+- `POST /auth/register` — create an account (client or artisan)
+- `POST /auth/login` — get a JWT access token
+- `GET /auth/me` — current user (requires `Authorization: Bearer <token>`)
+
 ## Configuration
 
 Copy `.env.example` to `.env` and adjust values. Settings are loaded via pydantic-settings in
@@ -80,8 +86,8 @@ tests/
 
 Planned FindArtisan features (not yet implemented):
 
-- Client & artisan accounts and authentication
-- Artisan profiles with skills, trade categories, and locations
+- Artisan profile endpoints (create/update artisan-only attributes)
 - Nearby artisan search
 - Service requests, quotes, and booking
 - Reviews and ratings
+- Refresh tokens
