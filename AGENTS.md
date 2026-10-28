@@ -15,12 +15,30 @@ Guidance for AI coding agents (and humans) working on the **FindArtisan API**
 src/api/
 ├── main.py                # FastAPI app factory (create_app) + ASGI app + entry point
 ├── core/
-│   └── config.py         # Settings via pydantic-settings (loaded from .env)
+│   ├── config.py         # Settings via pydantic-settings (loaded from .env)
+│   └── db.py             # Async engine, session factory, get_db dependency
+├── models/
+│   ├── base.py           # Declarative Base (naming convention) + TimestampMixin
+│   ├── user.py           # User model (single accounts table, Role enum)
+│   └── artisan_profile.py# ArtisanProfile model (1:1 with users via user_id FK)
 └── routers/
     └── health.py          # /health endpoint
+migrations/                # Alembic (async template), env.py reads DATABASE_URL from Settings
 tests/
 └── test_health.py
 ```
+
+## Model & migration conventions
+
+- Models live in `src/api/models/` (one module per aggregate), all inheriting from
+  `Base` in `models/base.py`; export every model from `models/__init__.py` so Alembic
+  autogenerate sees them.
+- Schema is always changed in two steps: update the SQLAlchemy models, then
+  autogenerate a migration (`uv run alembic revision --autogenerate -m "..."`),
+  review the generated file, and run `uv run alembic upgrade head` before committing.
+- Never edit a migration that has already been applied/shared — add a new revision.
+- Constraint naming comes from `NAMING_CONVENTION` in `models/base.py`; keep
+  `target_metadata = Base.metadata` wiring in `migrations/env.py` intact.
 
 ## Common commands
 
