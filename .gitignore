@@ -13,6 +13,10 @@ venv/
 .env.*
 !.env.example
 
+# Local dev databases
+*.db
+*.sqlite3
+
 # Tooling caches
 .pytest_cache/
 .ruff_cache/

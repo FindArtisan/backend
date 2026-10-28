@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
     DEBUG: bool = False
     API_V1_PREFIX: str = "/api/v1"
+    # Default to a local SQLite database for development; use a Postgres
+    # URL in production, e.g. postgresql+asyncpg://user:pass@host:5432/findartisan
+    DATABASE_URL: str = "sqlite+aiosqlite:///./findartisan.db"
 
 
 @lru_cache
