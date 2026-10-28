@@ -69,6 +69,14 @@ uv run ruff format .                     # format
 - App-level strings (project name, description, version) come from `Settings` — don't hardcode them in routers.
 - Request/response schemas live in `src/api/schemas/` (pydantic), service/business
   logic in `src/api/services/`; route handlers stay thin (validate → call service → return).
+- **Response envelope convention** — all data endpoints return JSON in the standard
+  envelope (`schemas/response.py`):
+  - success: `{"status": "success", "data": {...}}` — declare
+    `response_model=SuccessEnvelope[<DataSchema>]` and return `SuccessEnvelope(data=...)`.
+  - errors: `{"status": "error", "message": "...", "errors": [...]}` — never returned by
+    hand; raise `HTTPException` / trigger validation and let the global handlers in
+    `core/errors.py` render the envelope.
+  - `/health` is exempt (load-balancer probe keeps its own shape).
 - Endpoints requiring auth inject `get_current_user` from `api/dependencies.py`.
 - Always upgrade away from deprecated packages/warnings — see "Dependency & deprecation policy" below.
 

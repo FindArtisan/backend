@@ -32,6 +32,25 @@ Auth endpoints:
 - `POST /auth/login` — get a JWT access token
 - `GET /auth/me` — current user (requires `Authorization: Bearer <token>`)
 
+## Response format
+
+All data endpoints respond in a consistent envelope (`/health` excepted, as a
+load-balancer probe):
+
+```json
+{"status": "success", "data": {"email": "ada@example.com", "...": "..."}}
+```
+
+Errors render as:
+
+```json
+{"status": "error", "message": "Email already registered.", "errors": null}
+```
+
+Validation failures use message `"Validation failed."` and populate `errors` with
+field-level entries (`loc`, `msg`, `type`) — raw submitted values are never echoed back,
+so passwords can't leak into error bodies.
+
 ## Configuration
 
 Copy `.env.example` to `.env` and adjust values. Settings are loaded via pydantic-settings in
